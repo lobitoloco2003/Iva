@@ -1,0 +1,104 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Análisis Matemático de IVA y Precio</title>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script src="https://polyfill.io/v3/polyfill.min.js?features=es6"></script>
+    <script id="MathJax-script" async src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js"></script>
+    <style>
+        body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; margin: 20px; background-color: #f0f2f5; color: #333; }
+        .container { max-width: 1000px; margin: auto; background: white; padding: 30px; border-radius: 12px; box-shadow: 0 4px 20px rgba(0,0,0,0.08); }
+        h1, h2 { text-align: center; color: #2c3e50; }
+        .chart-container { position: relative; margin-bottom: 40px; height: 300px; }
+        .math-section { background: #f8f9fa; padding: 20px; border-left: 5px solid #3498db; border-radius: 4px; margin-top: 40px; }
+        .formula { font-size: 1.1em; margin: 15px 0; overflow-x: auto; }
+    </style>
+</head>
+<body>
+
+<div class="container">
+    <h1>Dinámica de Precios e IVA Variable</h1>
+    
+    <div class="chart-container">
+        <canvas id="ivaChart"></canvas>
+    </div>
+    
+    <div class="chart-container">
+        <canvas id="precioChart"></canvas>
+    </div>
+
+    <div class="chart-container">
+        <canvas id="derivadaChart"></canvas>
+    </div>
+
+    <div class="math-section">
+        <h2>Ecuaciones del Modelo</h2>
+        
+        <div class="formula">
+            <strong>1. Curva del IVA (Sigmoide):</strong>
+            \[ f(x) = L + \frac{K - L}{1 + e^{k(x - x_0)}} \]
+            <em>Donde \( L=10, K=21, k=30, x_0=1.3 \)</em>
+        </div>
+
+        <div class="formula">
+            <strong>2. Precio Total de Venta:</strong>
+            \[ P(x) = x \cdot \left( 1 + \frac{f(x)}{100} \right) \]
+        </div>
+
+        <div class="formula">
+            <strong>3. Derivada del Precio (Pendiente):</strong>
+            \[ P'(x) = \left( 1 + \frac{f(x)}{100} \right) + \frac{x}{100} \cdot \left( \frac{-k(K-L)e^{k(x-x_0)}}{(1 + e^{k(x-x_0)})^2} \right) \]
+            <em>Si \( P'(x) > 0 \), el precio siempre aumenta.</em>
+        </div>
+    </div>
+</div>
+
+<script>
+    const K = 21, L = 10, x0 = 1.3, k = 30;
+    const labels = [], dataIVA = [], dataPrecio = [], dataDerivada = [];
+
+    for (let x = 1.0; x <= 2.0; x += 0.01) {
+        labels.push(x.toFixed(2));
+        
+        // f(x)
+        const expTerm = Math.exp(k * (x - x0));
+        const fx = L + (K - L) / (1 + expTerm);
+        dataIVA.push(fx);
+        
+        // P(x)
+        const px = x * (1 + fx / 100);
+        dataPrecio.push(px);
+
+        // P'(x) - Derivada simplificada
+        const dfx = -(k * (K - L) * expTerm) / Math.pow(1 + expTerm, 2);
+        const dpx = (1 + fx / 100) + (x * dfx / 100);
+        dataDerivada.push(dpx);
+    }
+
+    const config = (id, label, data, color, yLabel, min, max) => {
+        new Chart(document.getElementById(id), {
+            type: 'line',
+            data: {
+                labels: labels,
+                datasets: [{ label: label, data: data, borderColor: color, borderWidth: 2, fill: false, pointRadius: 0 }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                scales: { 
+                    y: { title: { display: true, text: yLabel }, min: min, max: max },
+                    x: { title: { display: true, text: 'Base Imponible (x)' } }
+                }
+            }
+        });
+    };
+
+    config('ivaChart', 'Porcentaje IVA f(x)', dataIVA, '#e74c3c', '% IVA', 9, 22);
+    config('precioChart', 'Precio Total P(x)', dataPrecio, '#2ecc71', 'Precio ($)');
+    config('derivadaChart', 'Derivada P\'(x) (Pendiente)', dataDerivada, '#3498db', 'Valor de la Pendiente', 0, 1.5);
+</script>
+
+</body>
+</html>
